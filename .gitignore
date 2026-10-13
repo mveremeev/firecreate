@@ -1,0 +1,4 @@
+.DS_Store
+node_modules/
+# holds your API key plus generated builds/projects; recreated with defaults on start
+data/

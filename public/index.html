@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="color-scheme" content="light dark">
+<title>make.</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='7' fill='%2317171a'/></svg>">
+<script>
+  // Set the theme before first paint so dark-mode users never see a white flash.
+  try {
+    var pref = localStorage.getItem('make.theme');
+    if (pref && pref !== 'system') document.documentElement.dataset.theme = pref;
+  } catch (e) { /* private mode */ }
+</script>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="#/" aria-label="make. — start something new">make<span class="brand-dot" aria-hidden="true"></span></a>
+  <nav class="topnav">
+    <a href="#/" data-nav="home">New</a>
+    <a href="#/projects" data-nav="projects">Projects</a>
+    <a href="#/settings" data-nav="settings" class="icon-btn" aria-label="Settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18.01 5.99l-1.56 1.56M7.55 16.45l-1.56 1.56M18.01 18.01l-1.56-1.56M7.55 7.55L5.99 5.99"/></svg>
+    </a>
+  </nav>
+</header>
+
+<main id="main">
+
+  <!-- ==================== HOME ==================== -->
+  <section class="view" id="view-home" aria-labelledby="home-h">
+    <div class="wrap hero">
+      <h1 id="home-h" tabindex="-1">What do you want to make?</h1>
+      <p class="lede">Describe a Firefox extension in plain words. You’ll answer a couple of questions, then it builds itself.</p>
+
+      <div class="composer" id="home-composer">
+        <label class="sr-only" for="prompt-text">Describe your extension</label>
+        <textarea id="prompt-text" rows="3" maxlength="4000"
+                  aria-keyshortcuts="Control+Enter Meta+Enter"
+                  placeholder="An extension that hides YouTube Shorts…"></textarea>
+        <div class="composer-foot">
+          <span class="kbd-hint"><kbd>⌘</kbd><kbd>↵</kbd> to start</span>
+          <span class="char-left" id="prompt-count" aria-live="off" hidden></span>
+          <button class="btn primary" id="prompt-submit">Start</button>
+        </div>
+      </div>
+
+      <div class="chips" id="home-examples" aria-label="Examples">
+        <button class="chip" data-example="Hide YouTube Shorts everywhere on youtube.com.">Hide YouTube Shorts</button>
+        <button class="chip" data-example="Make every page dark after 10pm and back to normal in the morning.">Dark pages after 10pm</button>
+        <button class="chip" data-example="A button that copies the current page title and URL as a markdown link.">Copy page as markdown</button>
+        <button class="chip" data-example="Strip tracking parameters like utm_source from every link I click.">Strip tracking links</button>
+      </div>
+
+      <div class="notice" id="home-notice" role="alert"></div>
+    </div>
+
+    <div class="wrap recent" id="home-recent" hidden>
+      <h2 class="section-h">Pick up where you left off</h2>
+      <ul class="rows" id="home-recent-rows"></ul>
+    </div>
+  </section>
+
+  <!-- ==================== PROJECTS ==================== -->
+  <section class="view" id="view-projects" aria-labelledby="projects-h">
+    <div class="wrap">
+      <div class="page-head">
+        <h1 id="projects-h" tabindex="-1">Projects</h1>
+        <div class="page-tools">
+          <div class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+            <label class="sr-only" for="projects-search">Search projects</label>
+            <input id="projects-search" type="search" placeholder="Search" autocomplete="off" aria-keyshortcuts="/">
+          </div>
+          <a class="btn primary" href="#/">New</a>
+        </div>
+      </div>
+      <p class="sr-only" id="projects-count" aria-live="polite"></p>
+      <ul class="rows" id="projects-rows"></ul>
+      <div class="empty" id="projects-empty" hidden></div>
+    </div>
+  </section>
+
+  <!-- ==================== PROJECT ==================== -->
+  <section class="view" id="view-project" aria-labelledby="proj-title">
+    <!-- head + build strip stay pinned while the workspace scrolls -->
+    <div class="proj-top">
+      <div class="proj-head">
+        <a class="back" href="#/projects">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg>
+          Projects
+        </a>
+        <div class="proj-ident">
+          <h1 id="proj-title" tabindex="-1">Untitled</h1>
+          <button class="icon-btn subtle" id="proj-rename" aria-label="Rename project" title="Rename">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
+          </button>
+          <span class="status" id="proj-status"><i class="dot"></i><span></span></span>
+        </div>
+        <button class="icon-btn subtle danger" id="proj-delete" aria-label="Delete project" title="Delete">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg>
+        </button>
+      </div>
+
+      <div class="build-strip" id="build-strip" hidden>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+             aria-labelledby="progress-line"><span id="progress-fill"></span></div>
+        <div class="progress-meta">
+          <span id="progress-line">Starting…</span>
+          <span id="progress-pct" class="tabular">0%</span>
+        </div>
+      </div>
+
+      <!-- narrow screens show one pane at a time instead of stacking them -->
+      <div class="pane-switch" id="pane-switch" role="group" aria-label="Panel">
+        <button data-pane="main" class="on" aria-pressed="true">Chat</button>
+        <button data-pane="rail" aria-pressed="false">Details</button>
+      </div>
+    </div>
+
+    <div class="workspace" id="workspace" data-pane="main">
+      <!-- left pane: chat, or a file reader -->
+      <div class="pane main-pane">
+        <div class="pane-mode" id="pane-chat">
+          <!-- role=log + additions: completed messages announce once; the
+               streaming bubble is aria-hidden until it settles (WO-06) -->
+          <div class="chat" id="chat" role="log" aria-live="polite"
+               aria-atomic="false" aria-relevant="additions text"></div>
+          <button class="jump-bottom" id="chat-jump" hidden aria-label="Jump to the latest message">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+          </button>
+          <div class="composer chat-composer" id="chat-composer">
+            <label class="sr-only" for="chat-text">Reply</label>
+            <textarea id="chat-text" rows="1" placeholder="Reply in plain words…"></textarea>
+            <button class="btn primary send" id="chat-send">Send</button>
+          </div>
+          <p class="pane-foot" id="chat-status" aria-live="polite"></p>
+          <div class="notice" id="chat-notice" role="alert"></div>
+        </div>
+
+        <div class="pane-mode" id="pane-code" hidden>
+          <div class="code-head">
+            <button class="btn ghost small" id="code-back">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg>
+              Chat
+            </button>
+            <span class="code-name" id="code-name"></span>
+            <button class="btn ghost small" id="code-wrap" aria-pressed="false">Wrap</button>
+            <button class="btn ghost small" id="code-copy">Copy</button>
+          </div>
+          <pre class="code" id="code-body" tabindex="0" role="region" aria-label="File contents"></pre>
+        </div>
+      </div>
+
+      <!-- right rail: spec, files, logs -->
+      <aside class="pane rail" aria-label="Project details">
+        <div class="tabs" role="tablist" id="rail-tabs" aria-label="Project details">
+          <button class="tab" role="tab" data-tab="spec" id="tab-spec" aria-controls="panel-spec"
+                  aria-selected="true" tabindex="0">Plan</button>
+          <button class="tab" role="tab" data-tab="logs" id="tab-logs" aria-controls="panel-logs"
+                  aria-selected="false" tabindex="-1">Activity</button>
+          <button class="tab" role="tab" data-tab="files" id="tab-files" aria-controls="panel-files"
+                  aria-selected="false" tabindex="-1" hidden>Code</button>
+        </div>
+
+        <div class="rail-body">
+          <div class="panel" role="tabpanel" id="panel-spec" aria-labelledby="tab-spec" tabindex="0">
+            <p class="plan-banner" id="plan-banner" hidden></p>
+            <ul class="spec" id="spec-list"></ul>
+            <p class="empty-note" id="spec-empty">Nothing pinned down yet — keep talking and this fills in.</p>
+          </div>
+
+          <div class="panel" role="tabpanel" id="panel-logs" aria-labelledby="tab-logs" tabindex="0" hidden>
+            <div class="seg" id="log-levels" role="group" aria-label="Detail level" hidden>
+              <button data-level="activity" class="on" aria-pressed="true">Simple</button>
+              <button data-level="technical" aria-pressed="false">Technical</button>
+            </div>
+            <!-- polled once a second while building; announcing it would babble -->
+            <div id="log-lines" aria-live="off"></div>
+          </div>
+
+          <div class="panel" role="tabpanel" id="panel-files" aria-labelledby="tab-files" tabindex="0" hidden>
+            <ul class="files" id="file-list"></ul>
+            <p class="empty-note" id="files-empty">No code yet. Build the extension and its files show up here.</p>
+          </div>
+        </div>
+
+        <div class="rail-foot" id="rail-actions"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ==================== SETTINGS ==================== -->
+  <section class="view" id="view-settings" aria-labelledby="settings-h">
+    <div class="wrap narrow">
+      <h1 id="settings-h" tabindex="-1">Settings</h1>
+
+      <h2 class="section-h">Model</h2>
+      <p class="section-note">Any OpenAI-compatible endpoint works — OpenAI, OpenRouter, Ollama, LM&nbsp;Studio.
+        Picking OpenRouter unlocks its routing controls.</p>
+
+      <div class="field">
+        <label for="provider-seg">Provider</label>
+        <div class="seg" id="provider-seg" role="group" aria-label="Provider">
+          <button data-provider="openai" aria-pressed="false">OpenAI-compatible</button>
+          <button data-provider="openrouter" aria-pressed="false">OpenRouter</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="cfg-base">Base URL</label>
+        <input id="cfg-base" type="url" spellcheck="false" placeholder="https://api.openai.com/v1">
+      </div>
+      <div class="field">
+        <label for="cfg-key">API key</label>
+        <div class="key-wrap">
+          <input id="cfg-key" type="password" autocomplete="off" placeholder="sk-…">
+          <button type="button" class="btn ghost small" id="cfg-key-eye"
+                  aria-pressed="false" aria-label="Show the API key">Show</button>
+        </div>
+        <p class="field-note" id="cfg-key-note">Stored in plain text in <code>data/config.json</code>. Leave blank for local servers.</p>
+      </div>
+      <div class="field">
+        <label for="cfg-model">Model</label>
+        <input id="cfg-model" type="text" spellcheck="false" list="model-options" placeholder="gpt-4o-mini">
+        <datalist id="model-options"></datalist>
+        <p class="field-note"><button class="linkish" id="cfg-fetch-models">Load the list from this endpoint</button></p>
+      </div>
+      <div class="field">
+        <label for="cfg-context">Context window</label>
+        <input id="cfg-context" type="number" min="8000" max="2000000" step="1000"
+               placeholder="128000" aria-describedby="cfg-context-note">
+        <p class="field-note" id="cfg-context-note">How much the model can hold at once, in tokens. A tenth of this is spent on
+          conversation history — the opening of the chat plus as much of the recent tail as fits.</p>
+      </div>
+
+      <fieldset class="subfields" id="openrouter-fields" hidden>
+        <legend>OpenRouter routing</legend>
+        <div class="field">
+          <label for="cfg-sort">Route by</label>
+          <select id="cfg-sort">
+            <option value="throughput">Fastest throughput (nitro)</option>
+            <option value="latency">Lowest latency</option>
+            <option value="price">Cheapest</option>
+            <option value="">Let OpenRouter decide</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="cfg-quant">Quantization filter</label>
+          <input id="cfg-quant" type="text" spellcheck="false" placeholder="fp4  (blank = any)"
+                 aria-describedby="cfg-quant-note">
+          <p class="field-note" id="cfg-quant-note">Comma-separated, e.g. <code>fp4</code> or <code>fp8,bf16</code>.
+            Lower precision is faster; higher precision usually generates better code. Blank accepts any provider.</p>
+        </div>
+        <div class="field">
+          <label for="cfg-reasoning">Reasoning effort</label>
+          <select id="cfg-reasoning" aria-describedby="cfg-reasoning-note">
+            <option value="max">Max</option>
+            <option value="xhigh">Extra high</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+            <option value="minimal">Minimal</option>
+            <option value="off">Off — don't reason</option>
+            <option value="">Provider default</option>
+          </select>
+          <p class="field-note" id="cfg-reasoning-note">Not every model accepts every level; an unsupported one is
+            reported rather than ignored. Reasoning counts toward the reply limit above, so a high setting with a
+            low limit can leave nothing for the answer.</p>
+        </div>
+      </fieldset>
+
+      <h2 class="section-h">Generation</h2>
+      <div class="field">
+        <label for="cfg-temp">Temperature</label>
+        <input id="cfg-temp" type="number" min="0" max="2" step="0.05" placeholder="0.2"
+               aria-describedby="cfg-temp-note">
+        <p class="field-note" id="cfg-temp-note">Lower is more deterministic. Code generation wants roughly 0.1–0.3.</p>
+      </div>
+      <div class="field">
+        <label for="cfg-maxtok">Reply limit</label>
+        <input id="cfg-maxtok" type="number" min="0" max="400000" step="1000" placeholder="0"
+               aria-describedby="cfg-maxtok-note">
+        <p class="field-note" id="cfg-maxtok-note">Largest reply to allow, in tokens. 0 uses the provider's default —
+          which can silently truncate a long build. Try 64000 if builds come back incomplete.</p>
+      </div>
+      <div class="field">
+        <label for="cfg-toolmode">Build mode</label>
+        <select id="cfg-toolmode">
+          <option value="auto">Automatic — use tools if the model supports them</option>
+          <option value="tools">Tools only</option>
+          <option value="oneshot">Single reply (no tools)</option>
+        </select>
+        <p class="field-note">With tools the model writes files one at a time, checks its own work and edits in place.
+          Single reply makes it emit the whole extension in one message.</p>
+      </div>
+
+      <div class="notice" id="settings-notice" role="alert"></div>
+
+      <div class="btn-row">
+        <button class="btn primary" id="settings-save">Save</button>
+        <button class="btn" id="settings-test">Test connection</button>
+      </div>
+
+      <h2 class="section-h">Appearance</h2>
+      <div class="setting-row">
+        <div>
+          <div class="setting-name">Theme</div>
+          <div class="setting-note">Applies immediately.</div>
+        </div>
+        <div class="seg" id="theme-seg" role="group" aria-label="Theme">
+          <button data-theme="system" aria-pressed="false">System</button>
+          <button data-theme="light" aria-pressed="false">Light</button>
+          <button data-theme="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
+
+      <h2 class="section-h">Advanced</h2>
+      <div class="setting-row">
+        <div>
+          <div class="setting-name">Technical details</div>
+          <div class="setting-note">Show the generated code and the raw build log. Off keeps things plain.</div>
+        </div>
+        <div class="seg" id="tech-seg" role="group" aria-label="Technical details">
+          <button data-tech="off" aria-pressed="false">Off</button>
+          <button data-tech="on" aria-pressed="false">On</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+<div class="sr-only" id="route-announcer" aria-live="polite"></div>
+
+<dialog class="dialog" id="dialog">
+  <form method="dialog">
+    <h2 id="dialog-title"></h2>
+    <p id="dialog-body"></p>
+    <div class="field" id="dialog-field" hidden>
+      <label class="sr-only" for="dialog-input">Value</label>
+      <input id="dialog-input" type="text">
+    </div>
+    <div class="btn-row end">
+      <button class="btn" value="cancel" id="dialog-cancel">Cancel</button>
+      <button class="btn primary" value="confirm" id="dialog-confirm">Confirm</button>
+    </div>
+  </form>
+</dialog>
+
+<noscript><p class="wrap">make. needs JavaScript to run.</p></noscript>
+<script src="/app.js"></script>
+</body>
+</html>

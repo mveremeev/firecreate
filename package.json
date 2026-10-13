@@ -1,0 +1,14 @@
+{
+  "name": "firecreate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Describe what you want in plain words; get a Firefox extension back.",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node test/unit.js && node test/contrast.js && node test/e2e.js",
+    "mock": "node test/mock-llm.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
